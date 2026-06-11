@@ -58,14 +58,132 @@ app.get("/", (req, res) => {
 });
 
 // Contact Form Submit: 
+app.post("/contact", async (req, res) => {
+    try {
+        const {
+        name,
+        email,
+        subject,
+        message,
+        } = req.body;
 
+    // Save MongoDB
+    const newMessage =
+        await Message.create({
+            name,
+            email,
+            subject,
+            message,
+    });
+
+    // Send Email
+    await transporter.sendMail({
+        from: process.env.EMAIL,
+        to: process.env.EMAIL,
+        subject: `Portfolio Contact - ${subject}`,
+        html: `
+            <h2>New Contact Message</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong> ${message}</p>
+        `,
+        });
+
+    res.status(201).send({
+        success: true,
+        message: "Message Sent Successfully",
+        data: newMessage,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+        success: false,
+        message: "Something went wrong",
+    });
+  }
+});
 
 // Verify Admin: 
+app.post("/verify-admin", (req, res) => {
+    const { password } = req.body;
+    if (password === process.env.ADMIN_PASSWORD) {
+        res.send({ success: true, message: "Admin Verified" });
+    } else {
+        res.send({ success: false, message: "Invalid Password" });
+    }
+});
 
 // Get All Messages: 
+app.get("/messages", async (req, res) => {
+    try {
+        const adminKey =
+        req.headers.adminkey;
+
+        if (
+            adminKey !==
+            process.env.ADMIN_PASSWORD
+        ) {
+            return res
+            .status(403)
+            .send({
+                success: false,
+                message:
+                "Access Denied",
+            });
+        }
+
+        const messages =
+            await Message.find().sort({
+            createdAt: -1,
+        });
+
+        res.send(messages);
+    } catch (error) {
+        console.log(error);
+
+        res.status(500).send({
+            success: false,
+        });
+    }
+});
 
 // Delete Message: 
+app.delete("/messages/:id", async (req, res) => {
+    try {
+      const adminKey =
+        req.headers.adminkey;
 
+      if (
+        adminKey !==
+        process.env.ADMIN_PASSWORD
+      ) {
+        return res
+          .status(403)
+          .send({
+            success: false,
+          });
+      }
+
+      const result =
+        await Message.findByIdAndDelete(
+          req.params.id
+        );
+
+      res.send({
+        success: true,
+        result,
+      });
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).send({
+        success: false,
+      });
+    }
+  }
+);
 
 const PORT = process.env.PORT || 5000;
 
