@@ -19,7 +19,7 @@ mongoose
     console.log("✅ MongoDB Connected");
   })
   .catch((err) => {
-    console.log(err);
+    console.error("MongoDB Error:", err);
 });
 
 //  Message Schema: 
