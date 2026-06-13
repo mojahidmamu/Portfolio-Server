@@ -7,7 +7,10 @@ const nodemailer = require("nodemailer");
 
 const app = express();
 
-app.use(cors());
+app.use(cors( {
+  origin: ["https://portfolio-website-roan-kappa-72.vercel.app", "http://localhost:5173"],
+  credentials: true,
+}));
 app.use(express.json());
 
 const uri = process.env.MONGODB_URI;
