@@ -60,53 +60,91 @@ app.get("/", (req, res) => {
   res.send("Portfolio Server Running ...");
 });
 
-// Contact Form Submit: 
-app.post("/contact", async (req, res) => {
-    try {
-        const {
-        name,
-        email,
-        subject,
-        message,
-        } = req.body;
 
-    // Save MongoDB
-    const newMessage =
-        await Message.create({
-            name,
-            email,
-            subject,
-            message,
+app.post("/contact", async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    // Validation
+    if (!name || !email || !subject || !message) {
+      return res.status(400).send({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    // Save to MongoDB
+    const newMessage = await Message.create({
+      name,
+      email,
+      subject,
+      message,
     });
 
-    // Send Email
+    // Send Email to Your Gmail
     await transporter.sendMail({
-        from: process.env.EMAIL,
-        to: process.env.EMAIL,
-        subject: `Portfolio Contact - ${subject}`,
-        html: `
-            <h2>New Contact Message</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Message:</strong> ${message}</p>
+      from: `"Portfolio Contact Form" <${process.env.EMAIL}>`,
+      to: process.env.EMAIL,
+      replyTo: email,
+      subject: `📩 New Portfolio Message - ${subject}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px">
+
+        <h2 style="color:#7c3aed;">
+        🚀 New Portfolio Contact Message
+        </h2>
+
+        <table style="width:100%;border-collapse:collapse;">
+        <tr>
+        <td style="padding:10px;font-weight:bold;">Name</td>
+        <td>${name}</td>
+        </tr>
+
+        <tr>
+        <td style="padding:10px;font-weight:bold;">Email</td>
+        <td>${email}</td>
+        </tr>
+
+        <tr>
+        <td style="padding:10px;font-weight:bold;">Subject</td>
+        <td>${subject}</td>
+        </tr>
+        </table>
+
+        <div
+        style="
+        margin-top:20px;
+        padding:15px;
+        background:#f5f5f5;
+        border-radius:10px;
+        "
+        >
+        ${message}
+        </div>
+
+        <p style="margin-top:20px;color:#888;">
+        Sent from Portfolio Contact Form
+        </p>
+
+        </div>
         `,
-        });
+    });
 
     res.status(201).send({
-        success: true,
-        message: "Message Sent Successfully",
-        data: newMessage,
+      success: true,
+      message: "Message sent successfully",
+      data: newMessage,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
 
     res.status(500).send({
-        success: false,
-        message: "Something went wrong",
+      success: false,
+      message: "Failed to send message",
     });
   }
 });
+
 
 // Verify Admin: 
 app.post("/verify-admin", (req, res) => {
